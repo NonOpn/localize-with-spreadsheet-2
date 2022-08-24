@@ -18,12 +18,12 @@ Gs2File.fromGoogleSpreadsheet = async function(apiKey, spreadsheetKey, sheets) {
   )
 }
 
-Gs2File.fromGoogleSpreadsheetFake = async function(apiKey, spreadsheetKey, sheets, callback) {
+Gs2File.fromGoogleSpreadsheetFake = async function(apiKey, spreadsheetKey, sheets) {
   const reader = await GSReader.builder(apiKey, spreadsheetKey, sheets)
 
   return new Gs2File(
     reader,
-    new FakeWriter(callback)
+    new FakeWriter()
   )
 }
 
