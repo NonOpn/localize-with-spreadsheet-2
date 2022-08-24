@@ -1,5 +1,7 @@
 const GSReader = require('./core/LineReader.js').GS;
-const FileWriter = require('./core/Writer.js').File;
+const Writer = require('./core/Writer.js');
+const FileWriter = Writer.File;
+const FakeWriter = Writer.Fake;
 const Transformer = require('./core/Transformer.js');
 
 const Gs2File = function(reader, writer) {
@@ -13,6 +15,15 @@ Gs2File.fromGoogleSpreadsheet = async function(apiKey, spreadsheetKey, sheets) {
   return new Gs2File(
     reader,
     new FileWriter()
+  )
+}
+
+Gs2File.fromGoogleSpreadsheetFake = async function(apiKey, spreadsheetKey, sheets, callback) {
+  const reader = await GSReader.builder(apiKey, spreadsheetKey, sheets)
+
+  return new Gs2File(
+    reader,
+    new FakeWriter(callback)
   )
 }
 
@@ -66,8 +77,9 @@ Gs2File.prototype.save = async function(outputPath, opts) {
 
   if (lines) {
     const transformer = Transformer[format || 'android']
-    self._writer.write(outputPath, encoding, lines, transformer, opts)
+    return self._writer.write(outputPath, encoding, lines, transformer, opts)
   }
+  return undefined;
 }
 
 module.exports = Gs2File

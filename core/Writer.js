@@ -1,22 +1,6 @@
 const fs = require('fs')
 const EOL = require('./Constants').EOL
 
-const FileWriter = function() {
-}
-
-FileWriter.prototype.write = function(filePath, encoding, lines, transformer, options) {
-  let fileContent = ''
-  if (fs.existsSync(filePath)) {
-    fileContent = fs.readFileSync(filePath, encoding);
-  }
-
-  const valueToInsert = this.getTransformedLines(lines, transformer)
-
-  const output = transformer.insert(fileContent, valueToInsert, options)
-
-  writeFileAndCreateDirectoriesSync(filePath, output, 'utf8')
-}
-
 //https://gist.github.com/jrajav/4140206
 const writeFileAndCreateDirectoriesSync = function(filepath, content, encoding) {
   const mkpath = require('mkpath')
@@ -28,42 +12,63 @@ const writeFileAndCreateDirectoriesSync = function(filepath, content, encoding) 
   fs.writeFileSync(filepath, content, encoding)
 }
 
-//
+class Writer {
 
-const FakeWriter = function() {
-
-}
-
-FileWriter.prototype.getTransformedLines = function(lines, transformer) {
-  let valueToInsert = ''
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-
-    if (!line.isEmpty()) {
-      if (line.isComment()) {
-        const transformed = transformer.transformComment(line.getComment())
-
-        if (transformed !== null) {
-          valueToInsert += transformed
-
+  getTransformedLines(lines, transformer) {
+    let valueToInsert = ''
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+  
+      if (!line.isEmpty()) {
+        if (line.isComment()) {
+          const transformed = transformer.transformComment(line.getComment())
+  
+          if (transformed !== null) {
+            valueToInsert += transformed
+  
+            if (i !== lines.length - 1) {
+              valueToInsert += EOL
+            }
+          }
+        } else {
+          valueToInsert += transformer.transformKeyValue(line.getKey(), line.getValue())
+  
           if (i !== lines.length - 1) {
             valueToInsert += EOL
           }
         }
-      } else {
-        valueToInsert += transformer.transformKeyValue(line.getKey(), line.getValue())
-
-        if (i !== lines.length - 1) {
-          valueToInsert += EOL
-        }
       }
     }
+  
+    return valueToInsert
   }
-
-  return valueToInsert
 }
 
-FakeWriter.prototype.write = function(filePath, lines, transformer) {
+class FileWriter extends Writer {
+
+  write(filePath, encoding, lines, transformer, options) {
+    let fileContent = ''
+    if (fs.existsSync(filePath)) {
+      fileContent = fs.readFileSync(filePath, encoding);
+    }
+  
+    const valueToInsert = this.getTransformedLines(lines, transformer)
+  
+    const output = transformer.insert(fileContent, valueToInsert, options)
+  
+    writeFileAndCreateDirectoriesSync(filePath, output, 'utf8')
+    return undefined;
+  }
+}
+
+class FakeWriter extends Writer {
+  
+  write(filePath, encoding, lines, transformer, options) {
+
+    const valueToInsert = this.getTransformedLines(lines, transformer)
+  
+    return transformer.insert("", valueToInsert, options)
+  }
 
 }
 
